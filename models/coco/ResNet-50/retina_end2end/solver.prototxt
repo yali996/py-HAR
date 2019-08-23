@@ -1,0 +1,18 @@
+train_net: "models/coco/ResNet-50/retina_end2end/train_deform_att.prototxt"
+base_lr: 0.005
+lr_policy: "multistep"
+gamma: 0.1
+stepvalue: 60000
+stepvalue: 90000
+stepvalue: 108000
+display: 20
+
+max_iter: 90000
+
+momentum: 0.9
+weight_decay: 0.0001
+snapshot: 8000
+snapshot_prefix: "resnet50_retina"
+# iter_size: 2
+
+layer_wise_reduce: false
