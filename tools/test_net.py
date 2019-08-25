@@ -10,8 +10,7 @@
 """Test a Fast R-CNN network on an image database."""
 
 import _init_paths
-# from fast_rcnn.test_nms import test_net #, test_net_with_box_refine
-from fast_rcnn.test_retina import test_net #, test_net_with_box_refine
+from fast_rcnn.test_retina import test_net 
 from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list
 from datasets.factory import get_imdb
 import caffe
@@ -23,7 +22,7 @@ def parse_args():
     """
     Parse input arguments
     """
-    parser = argparse.ArgumentParser(description='Test a Fast R-CNN network')
+    parser = argparse.ArgumentParser(description='Test a Retina network')
     parser.add_argument('--gpu', dest='gpu_id', help='GPU id to use',
                         default=0, type=int)
     parser.add_argument('--def', dest='prototxt',
@@ -94,4 +93,3 @@ if __name__ == '__main__':
             imdb.config['rpn_file'] = args.rpn_file
 
     test_net(net, imdb, max_per_image=args.max_per_image, vis=args.vis)
-    # test_net_with_box_refine(net, imdb, max_per_image=args.max_per_image, vis=args.vis)

@@ -15,7 +15,6 @@ See README.md for installation instructions before running.
 
 import _init_paths
 from fast_rcnn.config import cfg
-from rpn.generate import im_proposals
 from fast_rcnn.test_retina import im_detect
 # from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
@@ -88,9 +87,6 @@ def demo(net, image_name):
     scores = dets[:,-1]
     boxes = dets[:,1:5] 
     clss = dets[:,0]
-    # print 'scores:', scores.shape, scores
-    # print 'boxes:', boxes.shape
-    # print 'clss:', clss.shape, clss   
  
     timer.toc()
     print ('Detection took {:.3f}s for '
@@ -120,19 +116,18 @@ def parse_args():
     parser.add_argument('--cpu', dest='cpu_mode',
                         help='Use CPU mode (overrides --gpu)',
                         action='store_true')
-    parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16]',
-                        choices=NETS.keys(), default='vgg16')
+    parser.add_argument('--net', dest='demo_net', help='Network to use [res101]',
+                        choices=NETS.keys(), default='res101')
 
     args = parser.parse_args()
 
     return args
 
 if __name__ == '__main__':
-    cfg.TEST.HAS_RPN = True  # Use RPN for proposals
-    args = parse_args()
     
+    args = parse_args()
     prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
-                            'retina_end2end', 'test_al_sp_ch4.pt')
+                            'retina_end2end', 'test_hyr_att.prototxt')
     caffemodel = os.path.join(cfg.DATA_DIR, 'retina_models',
                               NETS[args.demo_net][1])
     

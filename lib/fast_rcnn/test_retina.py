@@ -135,53 +135,10 @@ def im_detect(net, im):
     forward_kwargs = {'data': blobs['data'].astype(np.float32, copy=False)}
     forward_kwargs['im_info'] = blobs['im_info'].astype(np.float32, copy=False)
     blobs_out = net.forward(**forward_kwargs)
-     
-    S3 = net.blobs['spatt_P3_mask/1x1'].data
-    S4 = net.blobs['spatt_P4_mask/1x1'].data
-    S5 = net.blobs['spatt_P5_mask/1x1'].data
-    S6 = net.blobs['spatt_P6_mask/1x1'].data
-    S7 = net.blobs['spatt_P7_mask/1x1'].data
-    print S3.max(axis=None), S3.min(axis=None), S3.mean(axis=None)
-    print S4.max(axis=None), S4.min(axis=None), S4.mean(axis=None)
-    print S5.max(axis=None), S5.min(axis=None), S5.mean(axis=None) 
-    print S6.max(axis=None), S6.min(axis=None), S6.mean(axis=None)
-    print S7.max(axis=None), S7.min(axis=None), S7.mean(axis=None)
-    # sio.savemat('debug.mat', {'S3': S3, 'S4': S4, 'S5': S5, 'S6': S6, 'S7': S7 })    
-    att_map = {'S3':S3, 'S4':S4, 'S5':S5, 'S6': S6, 'S7': S7 }
     
-    ''' 
-    offset_c5 = net.blobs['fpn_offset_conv5_1b'].data
-    # print offset_c5
-    print offset_c5.max(axis=None), offset_c5.min(axis=None)
-    offset_c4 = net.blobs['fpn_offset_conv4_1b'].data
-    # print offset_c4
-    print offset_c4.max(axis=None), offset_c4.min(axis=None)
-    # sio.savemat('debug_dc.mat', {'offset_c5': offset_c5, 'offset_c4': offset_c4 }) 
-    '''
-    '''
-    FC3 = net.blobs['fpn_conv3x3_P3_CA4'].data
-    FB3 = net.blobs['fpn_conv3x3_P3_BA4'].data
-    FC4 = net.blobs['fpn_conv3x3_P4_CA4'].data
-    FB4 = net.blobs['fpn_conv3x3_P4_BA4'].data
-    FC5 = net.blobs['fpn_conv3x3_P5_CA4'].data
-    FB5 = net.blobs['fpn_conv3x3_P5_BA4'].data
-    FC6 = net.blobs['fpn_conv3x3_P6_CA4'].data
-    FB6 = net.blobs['fpn_conv3x3_P6_BA4'].data
-    FC7 = net.blobs['fpn_conv3x3_P7_CA4'].data
-    FB7 = net.blobs['fpn_conv3x3_P7_BA4'].data
-    CA = net.blobs['fpn_CA4_1x1_up'].data
-    BA = net.blobs['fpn_BA4_1x1_up'].data
-    print CA.max(axis=None), CA.min(axis=None),
-    print BA.max(axis=None), BA.min(axis=None),
-    sio.savemat('debug_ch.mat', {'CA': CA, 'BA': BA, 'FC3': FC3, 'FB3': FB3, 'FC4': FC4, 'FB4': FB4, 
-                                 'FC5': FC5, 'FB5': FB5, 'FC6' : FC6, 'FB6' : FB6, 'FC7':FC7, 'FB7':FB7 }) 
-    '''
     dets = blobs_out['dets']
     dets[:,1:5] /= im_scales[0]
-    return dets, att_map
-    # return dets
-    # return dets, [offset_c5]
-
+    return dets
 
 def vis_detections(im, class_name, dets, thresh=0.3):
     """Visual debugging of detections."""
@@ -201,57 +158,6 @@ def vis_detections(im, class_name, dets, thresh=0.3):
                 )
             plt.title('{}  {:.3f}'.format(class_name, score))
             plt.show()
-
-def mark_detections(im, dets, class_name=None, conf_thresh=0.4):
-    # mark objects
-    scores = dets[:,-1]
-    boxes = dets[:,1:5]
-    clss = dets[:,0]
-
-    im2 = im.copy()
-    # font = cv2.cv.InitFont(cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1, 1, 0, 3, 8) #Creates a font
-    font = cv2.FONT_HERSHEY_COMPLEX_SMALL
-    # font = cv2.FONT_HERSHEY_TRIPLEX
-    font_scale = 0.8
-    ind = np.where( scores >= conf_thresh )[0]
-    for k in xrange(len(ind)):
-        sx1 = int(boxes[ind[k],0])
-        sy1 = int(boxes[ind[k],1])
-        sx2 = int(boxes[ind[k],2])
-        sy2 = int(boxes[ind[k],3])
-        cls_ind = int(clss[ind[k]])
-        
-        if cls_ind in set([0]): # person
-            color = (0,255,0)
-        elif cls_ind in xrange(1,9): # vehicle
-            color = (0,255,255)
-        elif cls_ind in xrange(9,14): #outdoor 
-            color = (255,255,0)
-        elif cls_ind in xrange(14,24): #animal
-            color = (0,255,122)
-        elif cls_ind in xrange(24,29): #accesory
-            color = (122,255,0)
-        elif cls_ind in xrange(29,39): #sports
-            color = (0,0,255)
-        elif cls_ind in xrange(39,46): #kitchen
-            color = (0,122,255)
-        elif cls_ind in xrange(46,56): #food
-            color = (122,0,255)
-        elif cls_ind in xrange(56,62): #furniture
-            color = (255,0,255)
-        elif cls_ind in xrange(62,68): #electronic
-            color = (255,0,0)
-        elif cls_ind in xrange(68,73): #appliance
-            color = (255,122,122)
-        elif cls_ind in xrange(73,80): #indoor
-            color = (255,56,56)
-
-        cv2.rectangle(im2,(sx1,sy1),(sx2,sy2),color,2)
-        text_size = cv2.getTextSize(class_name[cls_ind]+':{:.3f}'.format(scores[ind[k]]), font, font_scale, 1)
-        cv2.rectangle(im2, (sx1, sy1-text_size[0][1]/2-1), (sx1+text_size[0][0], sy1++text_size[0][1]/2+1),(255,255,255),-1,4)
-        cv2.putText(im2, class_name[cls_ind]+':{:.3f}'.format(scores[ind[k]]),(sx1 ,sy1+text_size[0][1]/2), font, font_scale, (0,0,0))
-    cv2.addWeighted(im2, 0.8, im, 0.2, 0, im2)
-    return im2
 
 
 def apply_nms(all_boxes, thresh):
@@ -286,9 +192,7 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
                  for _ in xrange(imdb.num_classes)]
 
     output_dir = get_output_dir(imdb, net)
-    # resimagespath = '/home/liyl/code/py-HAR/output/retina_end2end/coco_2014_minival/detection_images/'
-    attmappath = '/home/liyl/code/py-HAR/output/retina_end2end/coco_2014_minival/attention_maps/'
-
+    
     # timers
     _t = {'im_detect' : Timer(), 'misc' : Timer()}
 
@@ -297,17 +201,11 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
 
         im = cv2.imread(imdb.image_path_at(i))
         _t['im_detect'].tic()
-        dets, att_map = im_detect(net, im)
+        dets = im_detect(net, im)
         _t['im_detect'].toc()
 
         _t['misc'].tic()
    
-        if True:
-            # im2 = mark_detections(im, dets,  imdb.classes[1:])
-            # cv2.imwrite(os.path.join(resimagespath, os.path.split(imdb.image_path_at(i))[-1]), im2)
-            im_name =  os.path.split(imdb.image_path_at(i))[-1]
-            sio.savemat(os.path.join(attmappath, im_name[:-3]+'mat') , att_map)
-
         # skip j = 0, because it's the background class
         for j in xrange(1,imdb.num_classes):
             inds = np.where( (dets[:,0] == j-1)&(dets[:,-1] >= thresh))[0]

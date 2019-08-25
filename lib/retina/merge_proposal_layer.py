@@ -31,29 +31,21 @@ class MergeProposalLayer(caffe.Layer):
         if DEBUG:
             print 'thresh: {}'.format(self._nms_thresh)
 
-        # rois blob: holds R regions of interest, each is a 5-tuple
-        # (n, x1, y1, x2, y2) specifying an image batch index n and a
-        # rectangle (x1, y1, x2, y2)
+        # output blob: holds M detections, each is a 6-tuple
+        # (c, x1, y1, x2, y2, score) specifying the class label c and a
+        # rectangle (x1, y1, x2, y2) as well as the confidence score
         top[0].reshape(1, 6)
 
 
     def forward(self, bottom, top):
         # Algorithm:
         #
-        # sort all (proposal, score) pairs by score from highest to lowest
-        # take top pre_nms_topN proposals before NMS
-        # apply NMS with threshold 0.7 to remaining proposals
-        # take after_nms_topN proposals after NMS
-        # return the top proposals (-> RoIs top, scores top)
+        # merge the detections from different levels in the pyramid 
+        # apply NMS with threshold 0.5 
+        # apply bounding box voting
+        # return the detections attached with class labels and confidence scores 
 
         num_scales = len(bottom)      
-        ''' 
-        all_dets = np.zeros((0, 6), dtype=np.float32)
-        for i in xrange(num_scales):
-            print "scale: ", i, "shape", bottom[i].data.shape
-            all_dets = np.vtsack( (all_dets, bottom[i].data.reshape((-1,6))) )  
-        '''
-        # num_classes = np.max( all_dets[:,0], axis = None) + 1         
         num_classes = self._num_classes         
         nms_thresh = self._nms_thresh        
 
@@ -66,23 +58,18 @@ class MergeProposalLayer(caffe.Layer):
             for i in xrange(num_scales):
                 dets = bottom[i].data.reshape((-1,6))
                 ind = np.where( dets[:,0] == c )[0]
-                # print c, ind
                 if len(ind) > 0:
                     all_dets = np.vstack((all_dets, dets[ind, :]))
             if all_dets.shape[0] > 1:    
                 # keep = nms(all_dets[:,1:], nms_thresh)
                 # merge_dets = np.vstack((merge_dets, all_dets[keep, :]))
                 keep_dets = soft_nms(all_dets[:,1:], sigma=0.5, method = 2)
-                # keep_dets = soft_nms(all_dets[:,1:], sigma=0.6, Nt = nms_thresh, method = 1)
                 C_F = c * np.ones((keep_dets.shape[0],1), dtype=np.float32)
                 # keep_dets = np.hstack( (C_F, keep_dets) )
                 # merge_dets = np.vstack((merge_dets, keep_dets))
                 B_F, S_F = _bbox_voting( all_dets[:, 1:], keep_dets, self._num_neighbors, self._bbox_thresh )
                 merge_dets = np.vstack((merge_dets, np.hstack((C_F, B_F, S_F[:,np.newaxis]))))
                
-
-        # print 'all detections number: {}', all_dets.shape
-        # print 'merged detections number: {}', merge_dets.shape
         top[0].reshape(*(merge_dets.shape))
         top[0].data[...] = merge_dets
 
@@ -124,14 +111,10 @@ def _bbox_voting(cls_dets, keep_dets, num_neighbors, bbox_thresh):
                 l = int(order[m])
                 s[m+1] = cls_dets[J[l],-1]
                 b[m+1,:] = cls_dets[J[l],:4]
-            # Scores_F[n] = 1 - np.prod(1-s, axis=None)
-            # Scores_F[n] = np.mean(s, axis=None)
             Scores_F[n] = np.sum(s, axis=None)/(num_neighbors + 1)
-            # Boxes_F[n,:] = np.dot(s, b)/(0.0000001 + np.sum(s, axis=None))
             Boxes_F[n,:] = np.dot(s, b)/ np.sum(s, axis=None)
         else:
             Scores_F[n] = keep_dets[n,-1]
             Boxes_F[n,:] = keep_dets[n,:4]
             
-    # Scores_F = keep_dets[:,-1] 
     return Boxes_F, Scores_F
