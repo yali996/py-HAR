@@ -1,10 +1,13 @@
 # py-HAR
 This is the code for HAR-Net, which is a single-stage object detection method.
 
+# HAR-Net: Joint Learning of Hybrid Attention for Single-stage Object Detection
+
+
 # Introduction
 
 HAR-Net is a single-stage object detection method with hybrid attention mechanism, such as spatial attention, channel attention and aligned attention. 
-This is a Python implementation, which modified from the py-faster-rcnn. 
+This is a Python implementation, which is modified from the py-faster-rcnn. 
 
 This code is only released for academic use. 
 
