@@ -17,10 +17,12 @@ This code is only released for academic use.
 `git clone https://github.com/yali996/py-HAR.git`
 
 ## Step 1: Compile the master branch of caffe
-Checkout the master branch of Caffe and compile it on your machine. Make sure that Caffe must be built with support for Python layers!
+Please rename the caffe-123 directory to caffe.
+Then checkout the master branch of Caffe and compile it on your machine. Make sure that Caffe must be built with support for Python layers!
 
 ## Step 2: Compile the nms module
 `cd lib`
+
 `make`
 
 # Testing
