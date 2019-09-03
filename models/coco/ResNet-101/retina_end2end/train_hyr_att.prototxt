@@ -8,8 +8,8 @@ layer {
     mean_value: 102.9801  mean_value: 115.9465  mean_value: 122.7717
   }
   image_data_param{
-    # source: 'data/cache/imglist_coco_2014_train+coco_2014_valminusminival_800_1350.txt'
-    source: 'data/cache/imglist_coco_2014_train+coco_2014_val_800_1350.txt'
+    # source: 'data/cache/imglist_coco_2014_train+coco_2014_valminusminival.txt'
+    source: 'data/cache/imglist_coco_2014_train+coco_2014_val.txt'
     root_folder: '/ssd/liyl/Database/coco/'
     shuffle: true
     batch_size: 2
