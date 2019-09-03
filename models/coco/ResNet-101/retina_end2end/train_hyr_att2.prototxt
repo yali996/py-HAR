@@ -1,18 +1,40 @@
 name: "ResNet-101"
-input: "data"
-input_shape {
-  dim: 1
-  dim: 3
-  dim: 600
-  dim: 800
+layer {
+  name: 'input-data'
+  type: 'ROIData'
+  top: 'data'
+  top: 'label'
+  transform_param {
+    mean_value: 102.9801  mean_value: 115.9465  mean_value: 122.7717
+  }
+  image_data_param{
+    source: 'data/cache/imglist_coco_2014_train+coco_2014_valminusminival.txt'
+    # source: 'data/cache/imglist_coco_2014_train+coco_2014_val.txt'
+    root_folder: '/ssd/liyl/Database/coco/'
+    shuffle: true
+    batch_size: 2
+    info_size: 5
+    roi_num: 95
+  }
 }
 
-input: "im_info"
-input_shape {
-  dim: 1
-  dim: 3
+layer {
+  name: 'anno_slice'
+  type: 'Slice'
+  bottom: 'label'
+  top: 'im_info'
+  top: 'gt_boxes_flatten'
+  top: 'others'
+  slice_param { axis: 1 slice_point: 4 slice_point: 479 }
 }
 
+layer {
+  name: 'gt_boxes'
+  type: 'Reshape'
+  bottom: 'gt_boxes_flatten'
+  top: 'gt_boxes'
+  reshape_param { shape {dim: 0 dim: -1 dim: 5 dim: 1} }
+}
 
 #------------- data -------------------
 layer {
@@ -5262,13 +5284,13 @@ layer {
   top: "fpn_conv5_1c"
 }
 layer {
-  name: "fpn_conv5_1c/gn/scale2"
+  name: "fpn_conv5_1c/gn/scale"
   type: "Scale"
   bottom: "fpn_conv5_1c"
   top: "fpn_conv5_1c"
   scale_param {
     bias_term: true
-    filler { type: "constant" value: 0.1 }
+    filler { type: "constant" value: 1 }
     bias_filler { type: "constant" value: 0 }
   }
   param { lr_mult: 1.0 decay_mult: 1.0 }
@@ -5397,13 +5419,13 @@ layer {
   top: "fpn_conv4_1c"
 }
 layer {
-  name: "fpn_conv4_1c/gn/scale2"
+  name: "fpn_conv4_1c/gn/scale"
   type: "Scale"
   bottom: "fpn_conv4_1c"
   top: "fpn_conv4_1c"
   scale_param {
     bias_term: true
-    filler { type: "constant" value: 0.1 }
+    filler { type: "constant" value: 1 }
     bias_filler { type: "constant" value: 0 }
   }
   param { lr_mult: 1.0 decay_mult: 1.0 }
@@ -5600,6 +5622,13 @@ layer {
   }  
 }
 layer {
+  name: "spatt_P3_mask_DC1/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P3_mask_DC1"
+  top: "spatt_P3_mask_DC1"
+  group_norm_param { group_num: 4 }
+}
+layer {
   name: "spatt_P3_mask_DC1/relu"
   type: "ReLU"
   bottom: "spatt_P3_mask_DC1"
@@ -5616,6 +5645,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }
+}
+layer {
+  name: "spatt_P3_mask_DC2/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P3_mask_DC2"
+  top: "spatt_P3_mask_DC2"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P3_mask_DC2/relu"
@@ -5636,6 +5672,13 @@ layer {
   }
 }
 layer {
+  name: "spatt_P3_mask_DC3/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P3_mask_DC3"
+  top: "spatt_P3_mask_DC3"
+  group_norm_param { group_num: 4 }
+}
+layer {
   name: "spatt_P3_mask_DC3/relu"
   type: "ReLU"
   bottom: "spatt_P3_mask_DC3"
@@ -5652,6 +5695,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }
+}
+layer {
+  name: "spatt_P3_mask_DC4/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P3_mask_DC4"
+  top: "spatt_P3_mask_DC4"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P3_mask_DC4/relu"
@@ -5678,16 +5728,9 @@ layer {
   top: "spatt_P3_mask/1x1"
 }
 layer {
-  name: "spatt_P3_mask/1plus"
-  type: "Power"
-  bottom: "spatt_P3_mask/1x1"
-  top: "spatt_P3_mask/1plus"
-  power_param { shift: 1 }
-}
-layer {
   name: "spatt_P3_mask"
   type: "Tile"
-  bottom: "spatt_P3_mask/1plus"
+  bottom: "spatt_P3_mask/1x1"
   top: "spatt_P3_mask"
   tile_param { tiles: 256 }
 }
@@ -5704,6 +5747,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }  
+}
+layer {
+  name: "spatt_P4_mask_DC1/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P4_mask_DC1"
+  top: "spatt_P4_mask_DC1"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P4_mask_DC1/relu"
@@ -5724,6 +5774,13 @@ layer {
   }
 }
 layer {
+  name: "spatt_P4_mask_DC2/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P4_mask_DC2"
+  top: "spatt_P4_mask_DC2"
+  group_norm_param { group_num: 4 }
+}
+layer {
   name: "spatt_P4_mask_DC2/relu"
   type: "ReLU"
   bottom: "spatt_P4_mask_DC2"
@@ -5740,6 +5797,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }
+}
+layer {
+  name: "spatt_P4_mask_DC3/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P4_mask_DC3"
+  top: "spatt_P4_mask_DC3"
+  group_norm_param { group_num: 4 }
 }
 layer { 
   name: "spatt_P4_mask_DC3/relu"
@@ -5758,6 +5822,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }
+}
+layer {
+  name: "spatt_P4_mask_DC4/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P4_mask_DC4"
+  top: "spatt_P4_mask_DC4"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P4_mask_DC4/relu"
@@ -5784,16 +5855,9 @@ layer {
   top: "spatt_P4_mask/1x1"
 }
 layer {
-  name: "spatt_P4_mask/1plus"
-  type: "Power"
-  bottom: "spatt_P4_mask/1x1"
-  top: "spatt_P4_mask/1plus"
-  power_param { shift: 1 }
-}
-layer {
   name: "spatt_P4_mask"
   type: "Tile"
-  bottom: "spatt_P4_mask/1plus"
+  bottom: "spatt_P4_mask/1x1"
   top: "spatt_P4_mask"
   tile_param { tiles: 256 }
 }
@@ -5811,6 +5875,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }  
+}
+layer {
+  name: "spatt_P5_mask_DC1/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P5_mask_DC1"
+  top: "spatt_P5_mask_DC1"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P5_mask_DC1/relu"
@@ -5831,6 +5902,13 @@ layer {
   }
 }
 layer {
+  name: "spatt_P5_mask_DC2/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P5_mask_DC2"
+  top: "spatt_P5_mask_DC2"
+  group_norm_param { group_num: 4 }
+}
+layer {
   name: "spatt_P5_mask_DC2/relu"
   type: "ReLU"
   bottom: "spatt_P5_mask_DC2"
@@ -5849,6 +5927,13 @@ layer {
   }
 }
 layer {
+  name: "spatt_P5_mask_DC3/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P5_mask_DC3"
+  top: "spatt_P5_mask_DC3"
+  group_norm_param { group_num: 4 }
+}
+layer {
   name: "spatt_P5_mask_DC3/relu"
   type: "ReLU"
   bottom: "spatt_P5_mask_DC3"
@@ -5865,6 +5950,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }
+}
+layer {
+  name: "spatt_P5_mask_DC4/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P5_mask_DC4"
+  top: "spatt_P5_mask_DC4"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P5_mask_DC4/relu"
@@ -5891,16 +5983,9 @@ layer {
   top: "spatt_P5_mask/1x1"
 }
 layer {
-  name: "spatt_P5_mask/1plus"
-  type: "Power"
-  bottom: "spatt_P5_mask/1x1"
-  top: "spatt_P5_mask/1plus"
-  power_param { shift: 1 }
-}
-layer {
   name: "spatt_P5_mask"
   type: "Tile"
-  bottom: "spatt_P5_mask/1plus"
+  bottom: "spatt_P5_mask/1x1"
   top: "spatt_P5_mask"
   tile_param { tiles: 256 }
 }
@@ -5917,6 +6002,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }  
+}
+layer {
+  name: "spatt_P6_mask_DC1/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P6_mask_DC1"
+  top: "spatt_P6_mask_DC1"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P6_mask_DC1/relu"
@@ -5937,6 +6029,13 @@ layer {
   }
 }
 layer {
+  name: "spatt_P6_mask_DC2/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P6_mask_DC2"
+  top: "spatt_P6_mask_DC2"
+  group_norm_param { group_num: 4 }
+}
+layer {
   name: "spatt_P6_mask_DC2/relu"
   type: "ReLU"
   bottom: "spatt_P6_mask_DC2"
@@ -5949,10 +6048,17 @@ layer {
   type: "Convolution"
   convolution_param {
     num_output: 16
-    kernel_size: 3 pad: 5 dilation: 5 stride: 1
+    kernel_size: 3 pad: 3 dilation: 3 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }
+}
+layer {
+  name: "spatt_P6_mask_DC3/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P6_mask_DC3"
+  top: "spatt_P6_mask_DC3"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P6_mask_DC3/relu"
@@ -5971,6 +6077,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }
+}
+layer {
+  name: "spatt_P6_mask_DC4/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P6_mask_DC4"
+  top: "spatt_P6_mask_DC4"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P6_mask_DC4/relu"
@@ -5997,16 +6110,9 @@ layer {
   top: "spatt_P6_mask/1x1"
 }
 layer {
-  name: "spatt_P6_mask/1plus"
-  type: "Power"
-  bottom: "spatt_P6_mask/1x1"
-  top: "spatt_P6_mask/1plus"
-  power_param { shift: 1 }
-}
-layer {
   name: "spatt_P6_mask"
   type: "Tile"
-  bottom: "spatt_P6_mask/1plus"
+  bottom: "spatt_P6_mask/1x1"
   top: "spatt_P6_mask"
   tile_param { tiles: 256 }
 }
@@ -6023,6 +6129,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }  
+}
+layer {
+  name: "spatt_P7_mask_DC1/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P7_mask_DC1"
+  top: "spatt_P7_mask_DC1"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P7_mask_DC1/relu"
@@ -6043,6 +6156,13 @@ layer {
   }
 }
 layer {
+  name: "spatt_P7_mask_DC2/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P7_mask_DC2"
+  top: "spatt_P7_mask_DC2"
+  group_norm_param { group_num: 4 }
+}
+layer {
   name: "spatt_P7_mask_DC2/relu"
   type: "ReLU"
   bottom: "spatt_P7_mask_DC2"
@@ -6055,10 +6175,17 @@ layer {
   type: "Convolution"
   convolution_param {
     num_output: 16
-    kernel_size: 3 pad: 5 dilation: 5 stride: 1
+    kernel_size: 3 pad: 3 dilation: 3 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }
+}
+layer {
+  name: "spatt_P7_mask_DC3/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P7_mask_DC3"
+  top: "spatt_P7_mask_DC3"
+  group_norm_param { group_num: 4 }
 }
 layer { 
   name: "spatt_P7_mask_DC3/relu"
@@ -6077,6 +6204,13 @@ layer {
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
   }
+}
+layer {
+  name: "spatt_P7_mask_DC4/gn"
+  type: "GroupNorm"
+  bottom: "spatt_P7_mask_DC4"
+  top: "spatt_P7_mask_DC4"
+  group_norm_param { group_num: 4 }
 }
 layer {
   name: "spatt_P7_mask_DC4/relu"
@@ -6103,16 +6237,9 @@ layer {
   top: "spatt_P7_mask/1x1"
 }
 layer {
-  name: "spatt_P7_mask/1plus"
-  type: "Power"
-  bottom: "spatt_P7_mask/1x1"
-  top: "spatt_P7_mask/1plus"
-  power_param { shift: 1 }
-}
-layer {
   name: "spatt_P7_mask"
   type: "Tile"
-  bottom: "spatt_P7_mask/1plus"
+  bottom: "spatt_P7_mask/1x1"
   top: "spatt_P7_mask"
   tile_param { tiles: 256 }
 }
@@ -8422,275 +8549,366 @@ layer {
 
 #=============================================
 layer {
-  name: "mixatt/cls_score_P3"
-  type: "Eltwise"
+  name: 'fpn_data_P3'
+  type: 'AnchorTarget'
+  bottom: 'cls_score_P3'
+  bottom: 'gt_boxes'
+  bottom: 'im_info'
+  top: 'labels_P3'
+  top: 'bbox_targets_P3'
+  top: 'bbox_inside_weights_P3'
+  top: 'bbox_outside_weights_P3'
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  rpn_anchor_target_param {
+    fg_thresh: 0.5 bg_thresh: 0.4 feat_stride: 8
+  }
+}
+layer {
+  name: "loss_cls_P3"
+  type: "FocalLoss"
   bottom: "cls_score_P3"
-  bottom: "featt/cls_score_P3"
-  top: "mixatt/cls_score_P3"
-  eltwise_param { operation: SUM coeff: 0.5 coeff: 0.5 }
+  bottom: "labels_P3"
+  propagate_down: 1
+  propagate_down: 0
+  top: "loss_cls_P3"
+  loss_weight: 0.5
+  focal_loss_param { mode: FULL gamma: 2.0 alpha: 0.25 }
+  loss_param { ignore_label: -1 normalize: true }
 }
+
 layer {
-  name: "mixatt/bbox_pred_P3"
-  type: "Eltwise"
+  name: "loss_bbox_P3"
+  type: "SmoothL1Loss"
   bottom: "bbox_pred_P3"
+  bottom: "bbox_targets_P3"
+  bottom: 'bbox_inside_weights_P3'
+  bottom: 'bbox_outside_weights_P3'
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  top: "loss_bbox_P3"
+  smooth_l1_loss_param { sigma: 10.0 }
+  loss_weight: 0.5
+}
+layer {
+  name: "featt/loss_cls_P3"
+  type: "FocalLoss"
+  bottom: "featt/cls_score_P3"
+  bottom: "labels_P3"
+  propagate_down: 1
+  propagate_down: 0
+  top: "featt/loss_cls_P3"
+  loss_weight: 0.5
+  focal_loss_param { mode: FULL gamma: 2.0 alpha: 0.25 }
+  loss_param { ignore_label: -1 normalize: true }
+}
+layer {
+  name: "featt/loss_bbox_P3"
+  type: "SmoothL1Loss"
   bottom: "featt/bbox_pred_P3"
-  top: "mixatt/bbox_pred_P3"
-  eltwise_param { operation: SUM coeff: 0.5 coeff: 0.5 }
+  bottom: "bbox_targets_P3"
+  bottom: 'bbox_inside_weights_P3'
+  bottom: 'bbox_outside_weights_P3'
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  top: "featt/loss_bbox_P3"
+  smooth_l1_loss_param { sigma: 10.0 }
+  loss_weight: 0.5
 }
 layer {
-  name: "mixatt/cls_score_P4"
-  type: "Eltwise"
+  name: 'fpn_data_P4'
+  type: 'AnchorTarget'
+  bottom: 'cls_score_P4'
+  bottom: 'gt_boxes'
+  bottom: 'im_info'
+  top: 'labels_P4'
+  top: 'bbox_targets_P4'
+  top: 'bbox_inside_weights_P4'
+  top: 'bbox_outside_weights_P4'
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  rpn_anchor_target_param {
+    fg_thresh: 0.5 bg_thresh: 0.4 feat_stride:  16
+  }
+}
+layer {
+  name: "loss_cls_P4"
+  type: "FocalLoss"
   bottom: "cls_score_P4"
-  bottom: "featt/cls_score_P4"
-  top: "mixatt/cls_score_P4"
-  eltwise_param { operation: SUM coeff: 0.5 coeff: 0.5 }
+  bottom: "labels_P4"
+  propagate_down: 1
+  propagate_down: 0
+  top: "loss_cls_P4"
+  loss_weight: 0.5
+  focal_loss_param { mode: FULL gamma: 2.0 alpha: 0.25 }
+  loss_param { ignore_label: -1 normalize: true }
 }
 layer {
-  name: "mixatt/bbox_pred_P4"
-  type: "Eltwise"
+  name: "loss_bbox_P4"
+  type: "SmoothL1Loss"
   bottom: "bbox_pred_P4"
+  bottom: "bbox_targets_P4"
+  bottom: 'bbox_inside_weights_P4'
+  bottom: 'bbox_outside_weights_P4'
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  top: "loss_bbox_P4"
+  smooth_l1_loss_param { sigma: 10.0 }
+  loss_weight: 0.5
+}
+layer {
+  name: "featt/loss_cls_P4"
+  type: "FocalLoss"
+  bottom: "featt/cls_score_P4"
+  bottom: "labels_P4"
+  propagate_down: 1
+  propagate_down: 0
+  top: "featt/loss_cls_P4"
+  loss_weight: 0.5
+  focal_loss_param { mode: FULL gamma: 2.0 alpha: 0.25 }
+  loss_param { ignore_label: -1 normalize: true }
+}
+layer {
+  name: "featt/loss_bbox_P4"
+  type: "SmoothL1Loss"
   bottom: "featt/bbox_pred_P4"
-  top: "mixatt/bbox_pred_P4"
-  eltwise_param { operation: SUM coeff: 0.5 coeff: 0.5 }
+  bottom: "bbox_targets_P4"
+  bottom: 'bbox_inside_weights_P4'
+  bottom: 'bbox_outside_weights_P4'
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  top: "featt/loss_bbox_P4"
+  smooth_l1_loss_param { sigma: 10.0 }
+  loss_weight: 0.5
 }
 layer {
-  name: "mixatt/cls_score_P5"
-  type: "Eltwise"
+  name: 'fpn_data_P5'
+  type: 'AnchorTarget'
+  bottom: 'cls_score_P5'
+  bottom: 'gt_boxes'
+  bottom: 'im_info'
+  top: 'labels_P5'
+  top: 'bbox_targets_P5'
+  top: 'bbox_inside_weights_P5'
+  top: 'bbox_outside_weights_P5'
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  rpn_anchor_target_param {
+    fg_thresh: 0.5 bg_thresh: 0.4 feat_stride:  32
+  }
+}
+layer {
+  name: "loss_cls_P5"
+  type: "FocalLoss"
   bottom: "cls_score_P5"
-  bottom: "featt/cls_score_P5"
-  top: "mixatt/cls_score_P5"
-  eltwise_param { operation: SUM coeff: 0.5 coeff: 0.5 }
+  bottom: "labels_P5"
+  propagate_down: 1
+  propagate_down: 0
+  top: "loss_cls_P5"
+  loss_weight: 0.5
+  focal_loss_param { mode: FULL gamma: 2.0 alpha: 0.25 }
+  loss_param { ignore_label: -1 normalize: true }
 }
+
 layer {
-  name: "mixatt/bbox_pred_P5"
-  type: "Eltwise"
+  name: "loss_bbox_P5"
+  type: "SmoothL1Loss"
   bottom: "bbox_pred_P5"
+  bottom: "bbox_targets_P5"
+  bottom: 'bbox_inside_weights_P5'
+  bottom: 'bbox_outside_weights_P5'
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  top: "loss_bbox_P5"
+  smooth_l1_loss_param { sigma: 10.0 }
+  loss_weight: 0.5
+}
+layer {
+  name: "featt/loss_cls_P5"
+  type: "FocalLoss"
+  bottom: "featt/cls_score_P5"
+  bottom: "labels_P5"
+  propagate_down: 1
+  propagate_down: 0
+  top: "featt/loss_cls_P5"
+  loss_weight: 0.5
+  focal_loss_param { mode: FULL gamma: 2.0 alpha: 0.25 }
+  loss_param { ignore_label: -1 normalize: true }
+}
+layer {
+  name: "featt/loss_bbox_P5"
+  type: "SmoothL1Loss"
   bottom: "featt/bbox_pred_P5"
-  top: "mixatt/bbox_pred_P5"
-  eltwise_param { operation: SUM coeff: 0.5 coeff: 0.5 }
+  bottom: "bbox_targets_P5"
+  bottom: 'bbox_inside_weights_P5'
+  bottom: 'bbox_outside_weights_P5'
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  top: "featt/loss_bbox_P5"
+  smooth_l1_loss_param { sigma: 10.0 }
+  loss_weight: 0.5
 }
 layer {
-  name: "mixatt/cls_score_P6"
-  type: "Eltwise"
+  name: 'fpn_data_P6'
+  type: 'AnchorTarget'
+  bottom: 'cls_score_P6'
+  bottom: 'gt_boxes'
+  bottom: 'im_info'
+  top: 'labels_P6'
+  top: 'bbox_targets_P6'
+  top: 'bbox_inside_weights_P6'
+  top: 'bbox_outside_weights_P6'
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  rpn_anchor_target_param {
+    fg_thresh: 0.5 bg_thresh: 0.4 feat_stride:  64
+  }
+}
+layer {
+  name: "loss_cls_P6"
+  type: "FocalLoss"
   bottom: "cls_score_P6"
-  bottom: "featt/cls_score_P6"
-  top: "mixatt/cls_score_P6"
-  eltwise_param { operation: SUM coeff: 0.5 coeff: 0.5 }
+  bottom: "labels_P6"
+  propagate_down: 1
+  propagate_down: 0
+  top: "loss_cls_P6"
+  loss_weight: 0.5
+  focal_loss_param { mode: FULL gamma: 2.0 alpha: 0.25 }
+  loss_param { ignore_label: -1 normalize: true }
 }
 layer {
-  name: "mixatt/bbox_pred_P6"
-  type: "Eltwise"
+  name: "loss_bbox_P6"
+  type: "SmoothL1Loss"
   bottom: "bbox_pred_P6"
+  bottom: "bbox_targets_P6"
+  bottom: 'bbox_inside_weights_P6'
+  bottom: 'bbox_outside_weights_P6'
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  top: "loss_bbox_P6"
+  smooth_l1_loss_param { sigma: 10.0 }
+  loss_weight: 0.5
+}
+layer {
+  name: "featt/loss_cls_P6"
+  type: "FocalLoss"
+  bottom: "featt/cls_score_P6"
+  bottom: "labels_P6"
+  propagate_down: 1
+  propagate_down: 0
+  top: "featt/loss_cls_P6"
+  loss_weight: 0.5
+  focal_loss_param { mode: FULL gamma: 2.0 alpha: 0.25 }
+  loss_param { ignore_label: -1 normalize: true }
+}
+layer {
+  name: "featt/loss_bbox_P6"
+  type: "SmoothL1Loss"
   bottom: "featt/bbox_pred_P6"
-  top: "mixatt/bbox_pred_P6"
-  eltwise_param { operation: SUM coeff: 0.5 coeff: 0.5 }
+  bottom: "bbox_targets_P6"
+  bottom: 'bbox_inside_weights_P6'
+  bottom: 'bbox_outside_weights_P6'
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  top: "featt/loss_bbox_P6"
+  smooth_l1_loss_param { sigma: 10.0 }
+  loss_weight: 0.5
 }
 layer {
-  name: "mixatt/cls_score_P7"
-  type: "Eltwise"
+  name: 'fpn_data_P7'
+  type: 'AnchorTarget'
+  bottom: 'cls_score_P7'
+  bottom: 'gt_boxes'
+  bottom: 'im_info'
+  bottom: "data"
+  top: 'labels_P7'
+  top: 'bbox_targets_P7'
+  top: 'bbox_inside_weights_P7'
+  top: 'bbox_outside_weights_P7'
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  rpn_anchor_target_param {
+    fg_thresh: 0.5 bg_thresh: 0.4 feat_stride: 128
+  }
+}
+layer {
+  name: "loss_cls_P7"
+  type: "FocalLoss"
   bottom: "cls_score_P7"
-  bottom: "featt/cls_score_P7"
-  top: "mixatt/cls_score_P7"
-  eltwise_param { operation: SUM coeff: 0.5 coeff: 0.5 }
+  bottom: "labels_P7"
+  propagate_down: 1
+  propagate_down: 0
+  top: "loss_cls_P7"
+  loss_weight: 0.5
+  focal_loss_param { mode: FULL gamma: 2.0 alpha: 0.25 }
+  loss_param { ignore_label: -1 normalize: true }
 }
 layer {
-  name: "mixatt/bbox_pred_P7"
-  type: "Eltwise"
+  name: "loss_bbox_P7"
+  type: "SmoothL1Loss"
   bottom: "bbox_pred_P7"
+  bottom: "bbox_targets_P7"
+  bottom: 'bbox_inside_weights_P7'
+  bottom: 'bbox_outside_weights_P7'
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  top: "loss_bbox_P7"
+  smooth_l1_loss_param { sigma: 10.0 }
+  loss_weight: 0.5
+}
+layer {
+  name: "featt/loss_cls_P7"
+  type: "FocalLoss"
+  bottom: "featt/cls_score_P7"
+  bottom: "labels_P7"
+  propagate_down: 1
+  propagate_down: 0
+  top: "featt/loss_cls_P7"
+  loss_weight: 0.5
+  focal_loss_param { mode: FULL gamma: 2.0 alpha: 0.25 }
+  loss_param { ignore_label: -1 normalize: true }
+}
+layer {
+  name: "featt/loss_bbox_P7"
+  type: "SmoothL1Loss"
   bottom: "featt/bbox_pred_P7"
-  top: "mixatt/bbox_pred_P7"
-  eltwise_param { operation: SUM coeff: 0.5 coeff: 0.5 }
-}
-
-layer {
-  name: "cls_score_P3_perm"
-  type: "Permute"
-  bottom: "mixatt/cls_score_P3"
-  top: "cls_score_P3_perm"
-  permute_param { order: 0 order: 2 order: 3 order: 1 }
-}
-layer {
-  name: "bbox_pred_P3_perm"
-  type: "Permute"
-  bottom: "mixatt/bbox_pred_P3"
-  top: "bbox_pred_P3_perm"
-  permute_param { order: 0 order: 2 order: 3 order: 1 }
+  bottom: "bbox_targets_P7"
+  bottom: 'bbox_inside_weights_P7'
+  bottom: 'bbox_outside_weights_P7'
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 0
+  propagate_down: 0
+  top: "featt/loss_bbox_P7"
+  smooth_l1_loss_param { sigma: 10.0 }
+  loss_weight: 0.5
 }
 layer {
-  name: "cls_prob_P3"
-  type: "Sigmoid"
-  bottom: "cls_score_P3_perm"
-  top: "cls_prob_P3"
-}
-layer {
-  name: "cls_score_P4_perm"
-  type: "Permute"
-  bottom: "mixatt/cls_score_P4"
-  top: "cls_score_P4_perm"
-  permute_param { order: 0 order: 2 order: 3 order: 1 }
-}
-layer {
-  name: "bbox_pred_P4_perm"
-  type: "Permute"
-  bottom: "mixatt/bbox_pred_P4"
-  top: "bbox_pred_P4_perm"
-  permute_param { order: 0 order: 2 order: 3 order: 1 }
-}
-layer {
-  name: "cls_prob_P4"
-  type: "Sigmoid"
-  bottom: "cls_score_P4_perm"
-  top: "cls_prob_P4"
-}
-layer {
-  name: "cls_score_P5_perm"
-  type: "Permute"
-  bottom: "mixatt/cls_score_P5"
-  top: "cls_score_P5_perm"
-  permute_param { order: 0 order: 2 order: 3 order: 1 }
-}
-layer {
-  name: "bbox_pred_P5_perm"
-  type: "Permute"
-  bottom: "mixatt/bbox_pred_P5"
-  top: "bbox_pred_P5_perm"
-  permute_param { order: 0 order: 2 order: 3 order: 1 }
-}
-layer {
-  name: "cls_prob_P5"
-  type: "Sigmoid"
-  bottom: "cls_score_P5_perm"
-  top: "cls_prob_P5"
-}
-layer {
-  name: "cls_score_P6_perm"
-  type: "Permute"
-  bottom: "mixatt/cls_score_P6"
-  top: "cls_score_P6_perm"
-  permute_param { order: 0 order: 2 order: 3 order: 1 }
-}
-layer {
-  name: "bbox_pred_P6_perm"
-  type: "Permute"
-  bottom: "mixatt/bbox_pred_P6"
-  top: "bbox_pred_P6_perm"
-  permute_param { order: 0 order: 2 order: 3 order: 1 }
-}
-layer {
-  name: "cls_prob_P6"
-  type: "Sigmoid"
-  bottom: "cls_score_P6_perm"
-  top: "cls_prob_P6"
-}
-layer {
-  name: "cls_score_P7_perm"
-  type: "Permute"
-  bottom: "mixatt/cls_score_P7"
-  top: "cls_score_P7_perm"
-  permute_param { order: 0 order: 2 order: 3 order: 1 }
-}
-layer {
-  name: "bbox_pred_P7_perm"
-  type: "Permute"
-  bottom: "mixatt/bbox_pred_P7"
-  top: "bbox_pred_P7_perm"
-  permute_param { order: 0 order: 2 order: 3 order: 1 }
-}
-layer {
-  name: "cls_prob_P7"
-  type: "Sigmoid"
-  bottom: "cls_score_P7_perm"
-  top: "cls_prob_P7"
-}
-layer {
-  name: 'proposal_P3'
-  type: 'Proposal'
-  bottom: 'cls_prob_P3'
-  bottom: 'bbox_pred_P3_perm'
-  bottom: 'im_info'
-  top: 'dets_P3'
-  proposal_param {
-    feat_stride: 8
-    pre_nms_top_k: 1000
-    thresh: 0.05 min_size: 8
-    nms_thresh: -1
-    keep_cls_info: true
-  }
-}
-layer {
-  name: 'proposal_P4'
-  type: 'Proposal'
-  bottom: 'cls_prob_P4'
-  bottom: 'bbox_pred_P4_perm'
-  bottom: 'im_info'
-  top: 'dets_P4'
-  proposal_param {
-    feat_stride: 16
-    pre_nms_top_k: 1000
-    thresh: 0.05 min_size: 8
-    nms_thresh: -1
-  }
-}
-layer {
-  name: 'proposal_P5'
-  type: 'Proposal'
-  bottom: 'cls_prob_P5'
-  bottom: 'bbox_pred_P5_perm'
-  bottom: 'im_info'
-  top: 'dets_P5'
-  proposal_param {
-    feat_stride: 32
-    pre_nms_top_k: 1000
-    thresh: 0.05
-    min_size: 8
-        nms_thresh: -1
-    keep_cls_info: true
-  }
-}
-layer {
-  name: 'proposal_P6'
-  type: 'Proposal'
-  bottom: 'cls_prob_P6'
-  bottom: 'bbox_pred_P6_perm'
-  bottom: 'im_info'
-  top: 'dets_P6'
-  proposal_param {
-    feat_stride: 64
-    pre_nms_top_k: 1000
-    thresh: 0.05
-    min_size: 8
-    nms_thresh: -1
-    keep_cls_info: true
-  }
-}
-layer {
-  name: 'proposal_P7'
-  type: 'Proposal'
-  bottom: 'cls_prob_P7'
-  bottom: 'bbox_pred_P7_perm'
-  bottom: 'im_info'
-  top: 'dets_P7'
-  proposal_param {
-    feat_stride: 128 pre_nms_top_k: 1000
-    thresh: 0.05 min_size: 8
-    nms_thresh: -1
-    keep_cls_info: true
-  }
-}
-
-#========= merge detections =============
-layer{
-  name: "proposals_merge"
-  type: 'Python'
-  bottom: "dets_P3"
-  bottom: "dets_P4"
-  bottom: "dets_P5"
-  bottom: "dets_P6"
-  bottom: "dets_P7"
-  top: "dets"
-  python_param {
-    module: 'retina.merge_proposal_layer'
-    layer: 'MergeProposalLayer'
-    param_str: "'nms_thresh': 0.5"
-  }
+  name: 'silence'
+  type: 'Silence'
+  bottom: 'others'
 }
